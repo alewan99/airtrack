@@ -11,6 +11,18 @@ const routes: Routes = [
     redirectTo: 'home',
     pathMatch: 'full'
   },
+  {
+    path: 'track-historia',
+    loadChildren: () => import('./track-historia/track-historia.module').then( m => m.TrackHistoriaPageModule)
+  },
+  {
+    path: 'track-realtime',
+    loadChildren: () => import('./track-realtime/track-realtime.module').then( m => m.TrackRealtimePageModule)
+  },
+  {
+    path: 'device-list',
+    loadChildren: () => import('./device-list/device-list.module').then( m => m.DeviceListPageModule)
+  }
 ];
 
 @NgModule({

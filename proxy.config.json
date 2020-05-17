@@ -1,0 +1,11 @@
+{
+  "/Api":{
+    "target":"http://church.alewan99.com",
+    "secure":false,
+    "logLevel":"debug",
+    "changeOrigin":true,
+    "pathRewrite":{
+      "^/Api":"/Api"
+    }
+  }
+}

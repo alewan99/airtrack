@@ -1,0 +1,173 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+  <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css" />
+  <title>地图显示</title>
+  <style>
+    html,
+    body,
+    #container {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+<div id="container"></div>
+<!-- 加载地图JSAPI脚本 -->
+<script src="https://webapi.amap.com/maps?v=1.4.15&key=1ef39020dc0b4f6ab6fbcd8bffa12005"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/Turf.js/5.1.6/turf.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/chroma-js/2.1.0/chroma.min.js"></script>
+<script src="stdColor2.js"></script>
+<script>
+  var map = new AMap.Map('container', {
+    resizeEnable: true, //是否监控地图容器尺寸变化
+    zoom:11, //初始化地图层级
+    center: [116.397428, 39.90923] //初始化地图中心点
+  });
+    var trackData =[]
+    var gridData = null;
+    setInterval(()=>{
+      $.get("http://jieli.alewan99.com/Api/Vehicle/Realtime?deviceId=9203H190600026", function(result){
+          //  map.setZoomAndCenter(zoom, [lng, lat]); map.setCenterAnZoom() result.lng,result.lat
+          //console.log(result)
+        if(trackData.length==0)
+        {
+            map.setZoomAndCenter(13, [result.lng, result.lat]);
+            trackData.push(result)
+            gridData = generateGrid(map)
+            renderData(gridData,result)
+        }else{
+            renderData(gridData,result)
+        }
+      });
+    },1000);
+
+    function generateGrid (map) {
+      let bounds =  map.getBounds();
+      let bbox = [bounds.southwest.lng,bounds.southwest.lat,bounds.northeast.lng,bounds.northeast.lat];
+      let cellSide = 0.05;
+      let options = {units: 'kilometres'};
+      let squareGrid = turf.squareGrid(bbox, cellSide, options);
+      let cell= squareGrid.features[0].geometry.coordinates;
+      let dx = Math.abs(cell[0][0][0] - cell[0][2][0])
+      let dy = Math.abs(cell[0][0][1] - cell[0][1][1])
+      let width = Math.abs(bbox[0] - bbox[2])
+      let height = Math.abs(bbox[1]-bbox[3])
+      let cols =parseInt(width/dx);
+      let rows = parseInt(height/dy);
+      let data = {width:width,height:height,cols:cols,rows:rows,dx:dx,dy:dy,cells:cols*rows,extent:bbox,grid:squareGrid}
+      return data
+    }
+
+    function renderData(gridData,dataPoint)
+    {
+      let dx2 = dataPoint.lng - gridData.extent[0]
+      let dy2 = dataPoint.lat - gridData.extent[1]
+      let colIndex = dx2/gridData.dx
+      let rowIndex = dy2/gridData.dy
+      let gridIndex = parseInt(colIndex)*gridData.rows + parseInt(rowIndex)
+      var polygon2 = new AMap.Polygon({
+        map:map,
+        fillColor:'red',
+        path:gridData.grid.features[gridIndex].geometry.coordinates,
+        draggable: false
+      })
+    }
+
+    function loadTask(){
+      $.get("https://jieli.alewan99.com/task1.csv", function(result){
+        //  map.setZoomAndCenter(zoom, [lng, lat]); map.setCenterAnZoom() result.lng,result.lat
+        //console.log(result)
+        if(trackData.length==0)
+        {
+          map.setZoomAndCenter(13, [result.lng, result.lat]);
+          trackData.push(result)
+          gridData = generateGrid(map)
+          renderData(gridData,result)
+        }else{
+          renderData(gridData,result)
+        }
+      });
+    }
+
+    function loadCsv(url,callback)
+    {
+      $.get(url, function(result){
+         let lines =  result.split("\n")
+         let header = lines[0].split(",")
+         lines.splice(0,1);
+         let points = []
+         lines.forEach(line=>{
+            if(line.trim()!=""){
+              let data = line.split(",")
+              let dataPoint = {
+                time:data[0],
+                lat:parseFloat(data[1]) ,
+                lng:parseFloat(data[2]),
+                no2:data[3],
+                co:data[4],
+                o3:data[5],
+                so2:data[6],
+                pm1:data[7],
+                pm2_5:data[8],
+                pm10:data[9],
+                temp:data[10],
+                voc:data[11]
+              };
+              points.push(dataPoint)
+            }
+        })
+         let dataPoint = points[points.length-1];
+         map.setZoomAndCenter(13, [dataPoint.lng, dataPoint.lat]);
+         gridData = generateGrid(map)
+        renderDataPoints(gridData,points)
+      });
+    }
+  function renderDataPoints(gridData,dataPoints) {
+    let cellInMap = new Map();
+    dataPoints.forEach(dataPoint => {
+      let dx2 = dataPoint.lng - gridData.extent[0]
+      let dy2 = dataPoint.lat - gridData.extent[1]
+      let colIndex = dx2 / gridData.dx
+      let rowIndex = dy2 / gridData.dy
+      let gridIndex = parseInt(colIndex) * gridData.rows + parseInt(rowIndex)
+      if (gridIndex < gridData.cells && !cellInMap.has(gridIndex)) {
+        var polygon2 = new AMap.Polygon({
+          map: map,
+          fillColor: getPollutionColor("pm10", dataPoint["pm10"]),
+          path: gridData.grid.features[gridIndex].geometry.coordinates,
+          draggable: false
+        })
+        let coords = gridData.grid.features[gridIndex].geometry.coordinates[0]
+        //let centroid = turf.centroid(gridData.grid.features[gridIndex]);
+        let w = Math.abs(coords[0].lng-coords[3].lng)
+        let h = Math.abs(coords[0].lat-coords[1].lat)
+        //var polygon = turf.polygon(gridData.grid.features[gridIndex].geometry.coordinates, { name: 'poly1' });
+        //let center = turf.center(polygon)
+        let pos = [coords[0].lng+w/2, coords[0].lat+h/2]
+        let label = parseFloat(dataPoint["pm10"]).toFixed(2)
+        // eslint-disable-next-line
+        var text = new AMap.Text({
+          text: label,
+          anchor: 'center', // 设置文本标记锚点
+          style: {
+            'background-color': 'transparent',
+            'border-width': 0
+          },
+          map:map,
+          position: pos,
+          zIndex:999
+        })
+        cellInMap.set(gridIndex, polygon2)
+      }
+    })
+  }
+  loadCsv("http://jieli.alewan99.com/task1.csv");
+</script>
+</body>
+</html>
