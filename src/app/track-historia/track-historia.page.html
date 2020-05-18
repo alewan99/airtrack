@@ -1,0 +1,79 @@
+<ion-menu side="start" content-id="main-content">
+  <ion-header>
+    <ion-toolbar translucent>
+      <ion-title>菜单</ion-title>
+    </ion-toolbar>
+  </ion-header>
+  <ion-content>
+    <ion-list>
+      <ion-item>
+        <ion-icon name="mail" slot="start"></ion-icon>
+        <ion-label>选择设备</ion-label>
+      </ion-item>
+      <ion-item>
+        <ion-icon name="paper-plane" slot="start"></ion-icon>
+        <ion-label>图例设置</ion-label>
+      </ion-item>
+      <ion-item>
+        <ion-icon name="heart" slot="start"></ion-icon>
+        <ion-label>历史走航</ion-label>
+      </ion-item>
+      <ion-item>
+        <ion-icon name="archive" slot="start"></ion-icon>
+        <ion-label>显示图例</ion-label>
+      </ion-item>
+      <ion-item>
+        <ion-icon name="trash" slot="start"></ion-icon>
+        <ion-label>周边环境点</ion-label>
+      </ion-item>
+      <ion-item>
+        <ion-icon name="warning" slot="start"></ion-icon>
+        <ion-label>风场</ion-label>
+      </ion-item>
+      <ion-item>
+        <ion-icon name="warning" slot="start"></ion-icon>
+        <ion-label>浓度场</ion-label>
+      </ion-item>
+      <ion-item>
+        <ion-icon name="warning" slot="start"></ion-icon>
+        <ion-label>插值</ion-label>
+      </ion-item>
+    </ion-list>
+  </ion-content>
+</ion-menu>
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>
+      历史走航
+    </ion-title>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+<ion-content [fullscreen]="true" id="main-content">
+  <div style="width: 100%;height: 100%;background-color: #8c8c8c;position: relative;" #mapView>
+    <div style="position: absolute;right: 5px;top: 5px;z-index: 999">
+      <ion-button size="small" color="dark"  expand="full" href="/home">实时</ion-button>
+      <ion-button size="small" color="dark"  expand="full">污染物</ion-button>
+      <ion-button size="small" color="dark"  expand="full">设备</ion-button>
+      <ion-button size="small" color="dark"  expand="full">底图</ion-button>
+      <ion-button size="small" color="dark"  expand="full">图例</ion-button>
+    </div>
+  </div>
+</ion-content>
+<ion-footer>
+  <div style="padding: 5px;">
+    <ion-list *ngIf="showOptions">
+      <ion-item> <ion-toggle slot="start"></ion-toggle>显示经过线</ion-item>
+      <ion-item> <ion-toggle slot="start" [checked]="taskPathVisible" (ionChange)="taskPathVisible=!taskPathVisible"  ></ion-toggle>显示任务路径</ion-item>
+      <ion-item> <ion-toggle slot="start" [checked]="taskGridsVisible" (ionChange)="taskGridsVisible=!taskGridsVisible" ></ion-toggle>显示网格</ion-item>
+    </ion-list>
+    <ion-button (click)=" startAnimation()">开始回放</ion-button>
+    <ion-button (click)=" pauseAnimation()">暂停播放</ion-button>
+    <ion-button (click)=" stopAnimation()">停止播放</ion-button>
+    <ion-button (click)="showOptions=showOptions&&showOptions===true?false:true">选项</ion-button>
+    <ion-range min="0" (ionChange)="changeTrackPath($event)" [(ngModel)]="currentLocation" [max]="trackPathLength"></ion-range>
+  </div>
+</ion-footer>
+

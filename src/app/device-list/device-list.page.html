@@ -1,0 +1,11 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>设备列表</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-list>
+      <ion-item *ngFor="let deviceItem of deviceList" (click)="dismissAndCheckDevice(deviceItem)">{{deviceItem.deviceName}}</ion-item>
+  </ion-list>
+</ion-content>
