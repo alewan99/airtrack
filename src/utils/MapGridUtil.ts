@@ -69,32 +69,10 @@ export  class MapGridUtil {
             autoRotation: true,
             angle: -90,
         });
-        this.marker.on('moving', (e) => {
-            console.log('moving');
-        });
+        // this.marker.on('moving', (e) => {
+        //     console.log('moving');
+        // });
     }
-
-    startAnimation() {
-        // for (const overlay of this.overlayPolylineGroup.getOverlays()) {
-        //     overlay.hide();
-        // }
-        // this.overlayPolylineGroup.hide();
-        this.marker.moveAlong(this.trackPath, 200);
-    }
-
-
-    pauseAnimation() {
-        this.marker.pauseMove();
-    }
-
-    stopAnimation() {
-        // this.pressedLocationIndex = 0;
-        this.marker.stopMove();
-        // this.trackPath = this.taskPath;
-    }
-
-
-
 
 
     public getOverlayTextGroup()

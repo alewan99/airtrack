@@ -3,6 +3,7 @@ import {TaskService} from '../../services/TaskService';
 import {CsvUtil} from '../../utils/CsvUtil';
 import {GeoUtil} from '../../utils/GeoUtil';
 import {MapGridUtil} from '../../utils/MapGridUtil';
+import {TrackData} from '../../model/TrackData';
 declare var AMap;
 @Component({
   selector: 'app-track-historia',
@@ -24,9 +25,11 @@ export class TrackHistoriaPage implements OnInit, AfterViewInit {
   showOptions = false;
   taskGrids = new Map();
   mTaskGridsVisible = true;
-  mTaskPolylineVisible = false;
+  mTaskPolylineVisible = true;
   currentTaskId;
-  currentLocation = 0;
+  currentCarLocation = 0;
+  currentData: TrackData;
+
 
   get taskGridsVisible(){
     return this.mTaskGridsVisible;
@@ -34,6 +37,13 @@ export class TrackHistoriaPage implements OnInit, AfterViewInit {
 
   set taskGridsVisible(value) {
     this.mTaskGridsVisible = value;
+    if (!!this.currentMapGrid) {
+      if (value) {
+        this.currentMapGrid.getOverlayPolygonGroup().show();
+      } else {
+        this.currentMapGrid.getOverlayPolygonGroup().hide();
+      }
+    }
   }
 
   get taskPathVisible() {
@@ -42,7 +52,23 @@ export class TrackHistoriaPage implements OnInit, AfterViewInit {
 
   set taskPathVisible(value) {
     this.mTaskPolylineVisible = value;
+    if (!!this.currentMapGrid) {
+      if (value) {
+
+        this.currentMapGrid.getOverlayPolylineGroup().show();
+      } else {
+        this.currentMapGrid.getOverlayPolylineGroup().hide();
+      }
+    }
   }
+
+  mPlayStatus = 0;
+
+  public resumeAnimation() {
+    this.currentMapGrid.marker.resumeMove();
+    this.mPlayStatus = 0;
+  }
+
 
 
   get trackPathLength() {
@@ -54,9 +80,17 @@ export class TrackHistoriaPage implements OnInit, AfterViewInit {
     return this.taskGrids.get(this.currentTaskId);
   }
 
-  changeTrackPath() {
-    const pos = this.currentMapGrid.trackPath[this.currentLocation];
-    this.currentMapGrid.marker.setPosition(pos);
+  changeTrackPath(event) {
+    if (this.currentCarLocation < this.currentMapGrid.trackPath.length - 1) {
+      this.currentMapGrid.marker.stopMove();
+      const pos = this.currentMapGrid.trackPath[this.currentCarLocation];
+      this.map.setZoomAndCenter(18, pos);
+      console.log(pos);
+      this.currentMapGrid.marker.setPosition(pos);
+      const path = this.currentMapGrid.trackPath.slice(this.currentCarLocation);
+      this.currentMapGrid.marker.moveAlong(path, 200);
+      this.mPlayStatus = 1;
+    }
   }
 
   ngOnInit() {
@@ -67,15 +101,18 @@ export class TrackHistoriaPage implements OnInit, AfterViewInit {
 
 
   startAnimation() {
-    this.taskGrids.get(this.currentTaskId).startAnimation();
+    this.currentMapGrid.marker.moveAlong(this.currentMapGrid.trackPath, 200);
+    this.mPlayStatus = 1;
   }
 
   pauseAnimation() {
-    this.taskGrids.get(this.currentTaskId).pauseAnimation();
+    this.currentMapGrid.marker.pauseMove();
+    this.mPlayStatus = 2;
   }
 
   stopAnimation() {
-    this.taskGrids.get(this.currentTaskId).stopAnimation();
+    this.currentMapGrid.marker.stopMove();
+    this.mPlayStatus = 0;
   }
 
   onPathVisbileChange(){
@@ -95,6 +132,12 @@ export class TrackHistoriaPage implements OnInit, AfterViewInit {
       const bbox = turf.bbox(features);
       const mapGrid = new MapGridUtil (this.map, bbox, 'pm10', 0.03);
       mapGrid.loadData(features);
+      mapGrid.marker.on('moving', (e) => {
+        const pos = [ mapGrid.marker.getPosition().getLng(), mapGrid.marker.getPosition().getLat()];
+        const targetPoint = turf.point(pos, {'marker-color': '#0F0'});
+        const nearest = turf.nearestPoint(targetPoint, mapGrid.features);
+        this.currentData = nearest.properties;
+      });
       this.taskGrids.set(this.currentTaskId, mapGrid);
     });
   }

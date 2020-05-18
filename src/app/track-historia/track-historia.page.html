@@ -60,6 +60,19 @@
       <ion-button size="small" color="dark"  expand="full">底图</ion-button>
       <ion-button size="small" color="dark"  expand="full">图例</ion-button>
     </div>
+    <ng-template [ngIf]="!!currentData">
+    <div style="position: absolute;left: 0;bottom: 0;z-index: 999;background-color: #2a2a2a;border-radius: 5px;padding: 5px;width: 200px;color: white;">
+        <div>time:{{currentData.time | date:'HH:mm:ss'}}</div>
+        <div>co:{{currentData.co}}</div>
+        <div>o3:{{currentData.o3}}</div>
+        <div>pm1:{{currentData.pm1}}</div>
+        <div>pm2.5:{{currentData.pm2_5}}</div>
+        <div>pm10:{{currentData.pm10}}</div>
+        <div>no2:{{currentData.no2}}</div>
+        <div>so2:{{currentData.so2}}</div>
+        <div>voc:{{currentData.voc}}</div>
+    </div>
+    </ng-template>
   </div>
 </ion-content>
 <ion-footer>
@@ -69,11 +82,12 @@
       <ion-item> <ion-toggle slot="start" [checked]="taskPathVisible" (ionChange)="taskPathVisible=!taskPathVisible"  ></ion-toggle>显示任务路径</ion-item>
       <ion-item> <ion-toggle slot="start" [checked]="taskGridsVisible" (ionChange)="taskGridsVisible=!taskGridsVisible" ></ion-toggle>显示网格</ion-item>
     </ion-list>
-    <ion-button (click)=" startAnimation()">开始回放</ion-button>
-    <ion-button (click)=" pauseAnimation()">暂停播放</ion-button>
-    <ion-button (click)=" stopAnimation()">停止播放</ion-button>
+    <ion-button (click)="startAnimation()" *ngIf="mPlayStatus===0">开始</ion-button>
+    <ion-button (click)="pauseAnimation()" *ngIf="mPlayStatus===1">暂停</ion-button>
+    <ion-button (click)="resumeAnimation()" *ngIf="mPlayStatus===2">播放</ion-button>
+    <ion-button (click)="stopAnimation()" [color]="mPlayStatus>0? 'danger':'dark'">停止</ion-button>
     <ion-button (click)="showOptions=showOptions&&showOptions===true?false:true">选项</ion-button>
-    <ion-range min="0" (ionChange)="changeTrackPath($event)" [(ngModel)]="currentLocation" [max]="trackPathLength"></ion-range>
+    <ion-range min="0"  [(ngModel)]="currentCarLocation" (ionChange)="changeTrackPath($event)" [max]="trackPathLength"></ion-range>
   </div>
 </ion-footer>
 
