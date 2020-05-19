@@ -1,0 +1,17 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>track-calendar</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <full-calendar
+          defaultView="dayGridMonth"
+          locale="zh-cn"
+          [plugins]="calendarPlugins"
+          [events]="[
+    { title: 'event 1', date: '2020-05-17' },
+    { title: 'event 2', date: '2019-05-17' }
+  ]"
+  ></full-calendar>
+</ion-content>
