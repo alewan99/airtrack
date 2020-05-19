@@ -108,18 +108,9 @@ export  class MapGridUtil {
                 const newFeatures = features.sort((p1, p2) => {
                     return p1.properties.time > p2.properties.time ? -1 : 1;
                 });
-                for (let i = 1; i < newFeatures.length; i++) {
-                    const options = {units: 'miles'};
-                    // @ts-ignore
-                    const distance = turf.distance(newFeatures[i - 1], newFeatures[i], options);
-                    const start = new Date(newFeatures[i - 1].properties.time).getTime();
-                    const end = new Date(newFeatures[i].properties.time).getTime();
-                    const timespan = Math.abs(end - start);
-                    console.log('distince=>' + distance + ';timespan=>' + timespan + ';value=>'
-                        + newFeatures[i].properties[this.pollution]
-                        + ';std value=>' + this.colorUtil.hotValues[this.pollution]);
-                    if (distance > 0.05 && timespan > 1000) {
-                        hotPoints.push(newFeatures[i]);
+                let pushHotPoints = true;
+                for (let i = 0; i < newFeatures.length - 1; i++) {
+                    if (pushHotPoints) {
                         const alterMarker = new AMap.Marker({
                             // map: this.map,
                             position: newFeatures[i].geometry.coordinates,
@@ -129,10 +120,28 @@ export  class MapGridUtil {
                             title: '报警点',
                             extData: newFeatures[i]
                         });
+                        this.hotPoints.push(newFeatures[i]);
                         this.overlayAlarmGroup.addOverlay(alterMarker);
                     }
+                    const options = {units: 'miles'};
+                    // @ts-ignore
+                    const distance = turf.distance(newFeatures[i], newFeatures[i + 1], options);
+                    const start = new Date(newFeatures[i].properties.time).getTime();
+                    const end = new Date(newFeatures[i + 1].properties.time).getTime();
+                    const timespan = Math.abs(end - start);
+                    console.log('distince=>' + distance + ';timespan=>' + timespan + ';value=>'
+                        + newFeatures[i].properties[this.pollution]
+                        + ';std value=>' + this.colorUtil.hotValues[this.pollution]);
+
+                    const total = timespan / 1000;
+                   // 最近一分钟不列入计算
+                    if (distance > 0.03 && total > 60) {
+                        pushHotPoints = true;
+                    } else {
+                        pushHotPoints = false;
+                    }
                 }
-                this.hotPoints = hotPoints;
+                this.hotPoints.concat(hotPoints);
             }, 1000
         );
     }
