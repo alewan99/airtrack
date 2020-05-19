@@ -3,7 +3,7 @@ import {HttpClient} from '@angular/common/http';
 import {CsvUtil} from '../../utils/CsvUtil';
 import {MapGridUtil} from '../../utils/MapGridUtil';
 import {AlertController, ModalController, PopoverController} from '@ionic/angular';
-import {PollutionStdColorUtil} from '../../utils/PollutionStdColorUtil';
+import {PollutionStdUtil} from '../../utils/PollutionStdUtil';
 import {DeviceListPage} from '../device-list/device-list.page';
 
 declare var AMap;
@@ -16,7 +16,7 @@ declare var AMap;
 export class HomePage implements OnInit, AfterViewInit {
 
   constructor(public http: HttpClient, public csvUtil: CsvUtil, public alterCtrl: AlertController, public modalCtrl: ModalController) {
-     this.pollutionStdUtil = new PollutionStdColorUtil();
+     this.pollutionStdUtil = new PollutionStdUtil();
   }
 
   get deviceText(){

@@ -44,7 +44,8 @@
     <ion-button (click)="resumeAnimation()" *ngIf="mPlayStatus===2">播放</ion-button>
     <ion-button (click)="stopAnimation()" [color]="mPlayStatus>0? 'danger':'dark'">停止</ion-button>
     <ion-button (click)="showOptions=showOptions&&showOptions===true?false:true">选项</ion-button>
+     <ion-button *ngIf="!!currentMapGrid">高值点<ion-badge color="danger">{{currentMapGrid.hotPoints.length}}</ion-badge></ion-button>
     <ion-range min="0"  [(ngModel)]="currentCarLocation" (ionChange)="changeTrackPath($event)" [max]="trackPathLength"></ion-range>
+
   </div>
 </ion-footer>
-

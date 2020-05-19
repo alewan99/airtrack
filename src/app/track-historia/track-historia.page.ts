@@ -5,8 +5,6 @@ import {GeoUtil} from '../../utils/GeoUtil';
 import {MapGridUtil} from '../../utils/MapGridUtil';
 import {TrackData} from '../../model/TrackData';
 import {LoadingController, ModalController} from '@ionic/angular';
-import {__await} from 'tslib';
-import {TrackCalendarPage} from '../track-calendar/track-calendar.page';
 declare var AMap;
 @Component({
   selector: 'app-track-historia',
@@ -14,13 +12,28 @@ declare var AMap;
   styleUrls: ['./track-historia.page.scss'],
 })
 export class TrackHistoriaPage implements OnInit, AfterViewInit {
+
+  @ViewChild('mapView') mapViewEl: ElementRef;
+  map: any;
+
+  csvUtil = new CsvUtil();
+  geoUtil = new GeoUtil();
+  showOptions = false;
+  taskGrids = new Map();
+  mTaskGridsVisible = true;
+  mTaskPolylineVisible = true;
+  currentTaskId;
+  currentCarLocation = 0;
+  currentData: TrackData;
+  mPlayStatus = 0;
+
   constructor(public taskService: TaskService, public loadingCtrl: LoadingController, public modalCtrl: ModalController) {
 
 
   }
 
 
-  get taskGridsVisible(){
+  get taskGridsVisible() {
     return this.mTaskGridsVisible;
   }
 
@@ -52,7 +65,6 @@ export class TrackHistoriaPage implements OnInit, AfterViewInit {
   }
 
 
-
   get trackPathLength() {
     const mapGrid: MapGridUtil = this.taskGrids.get(this.currentTaskId);
     return !!mapGrid ? mapGrid.trackPath.length : 0;
@@ -61,22 +73,6 @@ export class TrackHistoriaPage implements OnInit, AfterViewInit {
   get currentMapGrid(): MapGridUtil {
     return this.taskGrids.get(this.currentTaskId);
   }
-
-  @ViewChild('mapView') mapViewEl: ElementRef;
-  map: any;
-
-  csvUtil = new CsvUtil();
-  geoUtil = new GeoUtil();
-  showOptions = false;
-  taskGrids = new Map();
-  mTaskGridsVisible = true;
-  mTaskPolylineVisible = true;
-  currentTaskId;
-  currentCarLocation = 0;
-  currentData: TrackData;
-  mPlayStatus = 0;
-
-
 
   public resumeAnimation() {
     this.currentMapGrid.marker.resumeMove();
@@ -102,7 +98,6 @@ export class TrackHistoriaPage implements OnInit, AfterViewInit {
   }
 
 
-
   startAnimation() {
     this.currentMapGrid.marker.moveAlong(this.currentMapGrid.trackPath, 200);
     this.mPlayStatus = 1;
@@ -118,15 +113,8 @@ export class TrackHistoriaPage implements OnInit, AfterViewInit {
     this.mPlayStatus = 0;
   }
 
-  onPathVisbileChange(){
+  onPathVisbileChange() {
     console.log('onPathVisbileChange');
-  }
-
-  async showCalendar() {
-    const modal = await this.modalCtrl.create({
-      component: TrackCalendarPage,
-    });
-    return await modal.present();
   }
 
   ngAfterViewInit(): void {
@@ -137,13 +125,13 @@ export class TrackHistoriaPage implements OnInit, AfterViewInit {
     });
     this.currentTaskId = '05c9aa69-ace0-4153-8704-de9a0b641b78';
     this.taskService.loadTaskTrackCsvData(this.currentTaskId).subscribe(res => {
-      const trackData =  this.csvUtil.loadData(res);
+      const trackData = this.csvUtil.loadData(res);
       const features = this.geoUtil.toFeatureCollection(trackData);
       const bbox = turf.bbox(features);
-      const mapGrid = new MapGridUtil (this.map, bbox, 'pm10', 0.03);
+      const mapGrid = new MapGridUtil(this.map, bbox, 'pm10', 0.03);
       mapGrid.loadData(features);
       mapGrid.marker.on('moving', (e) => {
-        const pos = [ mapGrid.marker.getPosition().getLng(), mapGrid.marker.getPosition().getLat()];
+        const pos = [mapGrid.marker.getPosition().getLng(), mapGrid.marker.getPosition().getLat()];
         const targetPoint = turf.point(pos, {'marker-color': '#0F0'});
         // @ts-ignore
         const nearest = turf.nearestPoint(targetPoint, mapGrid.features);

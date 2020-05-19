@@ -1,10 +1,11 @@
-import {PollutionStdColorUtil} from './PollutionStdColorUtil';
+import {PollutionStdUtil} from './PollutionStdUtil';
 import {GeoUtil} from './GeoUtil';
 import {FeatureCollection} from 'geojson';
 import {EventEmitter} from '@angular/core';
 // import * as turf from 'turf';
 declare var AMap;
 export  class MapGridUtil {
+
     bbox;
     center;
     sortFeatures;
@@ -12,9 +13,10 @@ export  class MapGridUtil {
     overlayPolygonGroup;
     overlayTextGroup;
     overlayPolylineGroup;
+    overlayAlarmGroup;
     map;
     pollution = 'pm10';
-    colorUtil = new PollutionStdColorUtil();
+    colorUtil = new PollutionStdUtil();
     gridData;
     dataPoints;
     pageIndex = 0;
@@ -29,10 +31,9 @@ export  class MapGridUtil {
     marker;
     startMarker;
     endMaker;
-    onCellClick = (e) => console.log(e);
-    onPathClick = (e) => console.log(e);
+    hotPoints = [];
 
-    constructor(map, bbox, pollution= 'pm10', cellSize= 0.05) {
+    constructor(map, bbox, pollution = 'pm10', cellSize = 0.05) {
         // console.log(bbox);
         this.map = map;
         this.overlayTextGroup = new AMap.OverlayGroup();
@@ -42,6 +43,10 @@ export  class MapGridUtil {
         this.overlayTextGroup.setMap(this.map);
         this.overlayPolylineGroup.setMap(this.map);
         this.overlayTextGroup.hide();
+
+        this.overlayAlarmGroup = new AMap.OverlayGroup();
+        this.overlayAlarmGroup.setMap(this.map);
+
         if (!bbox) {
             const bounds = this.map.getBounds();
             // northeast: c {Q: 37.114156544824844, R: 114.6097491332888, lng: 114.609749, lat: 37.114157}
@@ -64,6 +69,12 @@ export  class MapGridUtil {
 
                 this.getOverlayTextGroup().hide();
             }
+
+            if (zoomLevel > 12) {
+                this.getOverlayAlarmGroup().show();
+            } else {
+                this.getOverlayAlarmGroup().hide();
+            }
         });
         this.marker = new AMap.Marker({
             map: this.map,
@@ -72,18 +83,63 @@ export  class MapGridUtil {
             autoRotation: true,
             angle: -90,
         });
-        // this.marker.on('moving', (e) => {
-        //     console.log('moving');
-        // });
+    }
+
+    getOverlayAlarmGroup() {
+        return this.overlayAlarmGroup;
     }
 
 
-    public getOverlayTextGroup()
-    {
+    // hotPoints = [];
+    onCellClick = (e) => console.log(e);
+    onPathClick = (e) => console.log(e);
+
+
+    /**
+     * 加载高值热点
+     */
+    loadHotPoints() {
+        setTimeout(
+            () => {
+                const features = this.sortFeatures.filter(p => parseFloat(p.properties[this.pollution].toString()) > this.colorUtil.hotValues[this.pollution]);
+                const hotPoints = [];
+                const newFeatures = features.sort((p1, p2) => {
+                    return p1.properties.time > p2.properties.time ? -1 : 1;
+                });
+                for (let i = 1; i < newFeatures.length; i++) {
+                    const options = {units: 'miles'};
+                    // @ts-ignore
+                    const distance = turf.distance(newFeatures[i - 1], newFeatures[i], options);
+                    const start = new Date(newFeatures[i - 1].properties.time).getTime();
+                    const end = new Date(newFeatures[i].properties.time).getTime();
+                    const timespan = Math.abs(end - start);
+                    console.log('distince=>' + distance + ';timespan=>' + timespan + ';value=>'
+                        + newFeatures[i].properties[this.pollution]
+                        + ';std value=>' + this.colorUtil.hotValues[this.pollution]);
+                    if (distance > 0.05 && timespan > 1000) {
+                        hotPoints.push(newFeatures[i]);
+                        const alterMarker = new AMap.Marker({
+                            // map: this.map,
+                            position: newFeatures[i].geometry.coordinates,
+                            // offset: new AMap.Pixel(-10, -10),
+                            // icon: '//vdata.amap.com/icons/b18/1/2.png', // 添加 Icon 图标 URL
+                            icon: 'assets/icon/alarm.png',
+                            title: '报警点',
+                            extData: newFeatures[i]
+                        });
+                        this.overlayAlarmGroup.addOverlay(alterMarker);
+                    }
+                }
+                this.hotPoints = hotPoints;
+            }, 1000
+        );
+    }
+
+    public getOverlayTextGroup() {
         return this.overlayTextGroup;
     }
 
-    public changePollution(pollution){
+    public changePollution(pollution) {
         this.pollution = pollution;
         this.overlayTextGroup.clearOverlays();
         this.overlayTextGroup.clearOverlays();
@@ -92,11 +148,11 @@ export  class MapGridUtil {
     }
 
 
-    public getOverlayPolygonGroup(){
+    public getOverlayPolygonGroup() {
         return this.overlayPolygonGroup;
     }
 
-    private generateGrid(bbox, cellSide: number= 0.05) {
+    private generateGrid(bbox, cellSide: number = 0.05) {
 
         // const cellSide = 0.05;
         // @ts-ignore
@@ -112,16 +168,16 @@ export  class MapGridUtil {
         return data;
     }
 
-    public renderData(dataPoint)
-    {
+
+    public renderData(dataPoint) {
         const dx2 = dataPoint.lng - this.gridData.extent[0];
         const dy2 = dataPoint.lat - this.gridData.extent[1];
         const colIndex = dx2 / this.gridData.dx;
         const rowIndex = dy2 / this.gridData.dy;
         // @ts-ignore
         const gridIndex = parseInt(colIndex.toString(), 0) * this.gridData.rows + parseInt(rowIndex.toString(), 0);
-        if (!this.gridMap.has(gridIndex) && gridIndex < this.gridData.cells){
-            const color =  this.colorUtil.getPollutionColor(this.pollution, dataPoint[this.pollution]);
+        if (!this.gridMap.has(gridIndex) && gridIndex < this.gridData.cells) {
+            const color = this.colorUtil.getPollutionColor(this.pollution, dataPoint[this.pollution]);
             const polygon2 = new AMap.Polygon({
                 fillColor: color,
                 fillOpacity: .75,
@@ -135,7 +191,7 @@ export  class MapGridUtil {
             const coords = this.gridData.grid.features[gridIndex].geometry.coordinates[0];
             const w = Math.abs(coords[0].lng - coords[3].lng);
             const h = Math.abs(coords[0].lat - coords[1].lat);
-            const pos: number[] =  [coords[0].lng + w / 2, coords[0].lat + h / 2];
+            const pos: number[] = [coords[0].lng + w / 2, coords[0].lat + h / 2];
             const label = parseFloat(dataPoint[this.pollution]).toFixed(2);
             const text = new AMap.Text({
                 text: label,
@@ -193,7 +249,7 @@ export  class MapGridUtil {
         this.gridData = this.generateGrid(this.bbox, this.gridCellSize);
         this.dataPoints = this.sortFeatures.map(p => p.properties);
         this.trackPath = this.sortFeatures.map(p => p.geometry.coordinates);
-        const nPageCount =  parseInt((this.dataPoints.length / this.pageSize).toString(), 0);
+        const nPageCount = parseInt((this.dataPoints.length / this.pageSize).toString(), 0);
         this.pageCount = this.dataPoints.length % this.pageSize === 0 ? nPageCount : nPageCount + 1;
         this.pageIndex = 0;
         this.bbox = turf.bbox(this.features);
@@ -230,12 +286,11 @@ export  class MapGridUtil {
         this.renderDataPoints(this.dataPoints);
         this.generateTrackPath();
         this.getOverlayTextGroup().hide();
+        this.loadHotPoints();
     }
 
 
-
-
-    public getOverlayPolylineGroup(){
+    public getOverlayPolylineGroup() {
         return this.overlayPolylineGroup;
     }
 
@@ -250,19 +305,22 @@ export  class MapGridUtil {
                     this.pageIndex === this.pageCount - 1 ?
                         this.sortFeatures.slice(this.pageIndex * this.pageSize) :
                         this.sortFeatures.slice(this.pageIndex * this.pageSize, this.pageSize * (this.pageIndex + 1));
-                for (let i = 1; i < points.length; i++)
-                {
+                for (let i = 1; i < points.length; i++) {
                     // console.log(this.sortFeatures[i - 1].properties.time - this.sortFeatures[i].properties.time)
                     const distance = turf.distance(points[i - 1], points[i]);
-                    if (distance === 0) {continue; }
-                    if (distance > 0.1) {continue; }
+                    if (distance === 0) {
+                        continue;
+                    }
+                    if (distance > 0.1) {
+                        continue;
+                    }
                     const trackPath = new AMap.Polyline({
                         map: this.map,
                         path: [points[i - 1].geometry.coordinates, points[i].geometry.coordinates
                         ],            // 设置线覆盖物路径
                         showDir: false,
                         strokeColor: this.colorUtil.getPollutionColor(this.pollution,
-                            this.sortFeatures[i].properties[this.pollution]),   // 线颜色
+                            points[i].properties[this.pollution]),   // 线颜色
                         strokeWeight: 5,           // 线宽
                         zIndex: 375,
                         extData: points[i - 1]
@@ -274,6 +332,7 @@ export  class MapGridUtil {
                 this.pageIndex++;
                 this.isBusy = false;
                 this.generateTrackPath();
+                // this.loadHotPoints();
             }, 500);
         }
     }
