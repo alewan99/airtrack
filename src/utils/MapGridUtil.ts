@@ -101,7 +101,9 @@ export  class MapGridUtil {
     loadHotPoints() {
         setTimeout(
             () => {
-                const features = this.sortFeatures.filter(p => parseFloat(p.properties[this.pollution].toString()) > this.colorUtil.hotValues[this.pollution]);
+                const features = this.sortFeatures.filter(p =>
+                    parseFloat(p.properties[this.pollution].toString()) >
+                    this.colorUtil.hotValues[this.pollution]);
                 const hotPoints = [];
                 const newFeatures = features.sort((p1, p2) => {
                     return p1.properties.time > p2.properties.time ? -1 : 1;
