@@ -12,11 +12,13 @@ import {HttpClientModule} from '@angular/common/http';
 import {CsvUtil} from '../utils/CsvUtil';
 import {DeviceService} from '../services/DeviceService';
 import {TaskService} from '../services/TaskService';
+import { FullCalendarModule } from '@fullcalendar/angular'; // for FullCalendar!
 
 @NgModule({
   declarations: [AppComponent],
   entryComponents: [],
-  imports: [BrowserModule, IonicModule.forRoot(), AppRoutingModule, HttpClientModule],
+  imports: [BrowserModule, FullCalendarModule, IonicModule.forRoot(),
+    AppRoutingModule, HttpClientModule],
   providers: [
     StatusBar,
     SplashScreen,

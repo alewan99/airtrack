@@ -22,7 +22,11 @@ const routes: Routes = [
   {
     path: 'device-list',
     loadChildren: () => import('./device-list/device-list.module').then( m => m.DeviceListPageModule)
+  },  {
+    path: 'track-calendar',
+    loadChildren: () => import('./track-calendar/track-calendar.module').then( m => m.TrackCalendarPageModule)
   }
+
 ];
 
 @NgModule({

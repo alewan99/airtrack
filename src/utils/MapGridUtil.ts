@@ -1,6 +1,7 @@
 import {PollutionStdColorUtil} from './PollutionStdColorUtil';
 import {GeoUtil} from './GeoUtil';
 import {FeatureCollection} from 'geojson';
+import {EventEmitter} from '@angular/core';
 // import * as turf from 'turf';
 declare var AMap;
 export  class MapGridUtil {
@@ -28,6 +29,8 @@ export  class MapGridUtil {
     marker;
     startMarker;
     endMaker;
+    onCellClick = (e) => console.log(e);
+    onPathClick = (e) => console.log(e);
 
     constructor(map, bbox, pollution= 'pm10', cellSize= 0.05) {
         // console.log(bbox);
@@ -128,6 +131,7 @@ export  class MapGridUtil {
                 extData: dataPoint,
                 draggable: false
             });
+            polygon2.on('click', (e) => this.onCellClick(e));
             const coords = this.gridData.grid.features[gridIndex].geometry.coordinates[0];
             const w = Math.abs(coords[0].lng - coords[3].lng);
             const h = Math.abs(coords[0].lat - coords[1].lat);
@@ -260,8 +264,10 @@ export  class MapGridUtil {
                         strokeColor: this.colorUtil.getPollutionColor(this.pollution,
                             this.sortFeatures[i].properties[this.pollution]),   // 线颜色
                         strokeWeight: 5,           // 线宽
-                        zIndex: 375
+                        zIndex: 375,
+                        extData: points[i - 1]
                     });
+                    trackPath.on('click', this.onPathClick);
                     this.overlayPolylineGroup.addOverlay(trackPath);
                 }
 

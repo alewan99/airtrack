@@ -4,6 +4,9 @@ import {CsvUtil} from '../../utils/CsvUtil';
 import {GeoUtil} from '../../utils/GeoUtil';
 import {MapGridUtil} from '../../utils/MapGridUtil';
 import {TrackData} from '../../model/TrackData';
+import {LoadingController, ModalController} from '@ionic/angular';
+import {__await} from 'tslib';
+import {TrackCalendarPage} from '../track-calendar/track-calendar.page';
 declare var AMap;
 @Component({
   selector: 'app-track-historia',
@@ -11,24 +14,10 @@ declare var AMap;
   styleUrls: ['./track-historia.page.scss'],
 })
 export class TrackHistoriaPage implements OnInit, AfterViewInit {
-
-  @ViewChild('mapView') mapViewEl: ElementRef;
-  map: any;
-  constructor(public taskService: TaskService) {
-
+  constructor(public taskService: TaskService, public loadingCtrl: LoadingController, public modalCtrl: ModalController) {
 
 
   }
-
-  csvUtil = new CsvUtil();
-  geoUtil = new GeoUtil();
-  showOptions = false;
-  taskGrids = new Map();
-  mTaskGridsVisible = true;
-  mTaskPolylineVisible = true;
-  currentTaskId;
-  currentCarLocation = 0;
-  currentData: TrackData;
 
 
   get taskGridsVisible(){
@@ -62,13 +51,6 @@ export class TrackHistoriaPage implements OnInit, AfterViewInit {
     }
   }
 
-  mPlayStatus = 0;
-
-  public resumeAnimation() {
-    this.currentMapGrid.marker.resumeMove();
-    this.mPlayStatus = 0;
-  }
-
 
 
   get trackPathLength() {
@@ -78,6 +60,27 @@ export class TrackHistoriaPage implements OnInit, AfterViewInit {
 
   get currentMapGrid(): MapGridUtil {
     return this.taskGrids.get(this.currentTaskId);
+  }
+
+  @ViewChild('mapView') mapViewEl: ElementRef;
+  map: any;
+
+  csvUtil = new CsvUtil();
+  geoUtil = new GeoUtil();
+  showOptions = false;
+  taskGrids = new Map();
+  mTaskGridsVisible = true;
+  mTaskPolylineVisible = true;
+  currentTaskId;
+  currentCarLocation = 0;
+  currentData: TrackData;
+  mPlayStatus = 0;
+
+
+
+  public resumeAnimation() {
+    this.currentMapGrid.marker.resumeMove();
+    this.mPlayStatus = 1;
   }
 
   changeTrackPath(event) {
@@ -119,6 +122,13 @@ export class TrackHistoriaPage implements OnInit, AfterViewInit {
     console.log('onPathVisbileChange');
   }
 
+  async showCalendar() {
+    const modal = await this.modalCtrl.create({
+      component: TrackCalendarPage,
+    });
+    return await modal.present();
+  }
+
   ngAfterViewInit(): void {
     this.map = new AMap.Map(this.mapViewEl.nativeElement, {
       resizeEnable: true, // 是否监控地图容器尺寸变化
@@ -135,6 +145,7 @@ export class TrackHistoriaPage implements OnInit, AfterViewInit {
       mapGrid.marker.on('moving', (e) => {
         const pos = [ mapGrid.marker.getPosition().getLng(), mapGrid.marker.getPosition().getLat()];
         const targetPoint = turf.point(pos, {'marker-color': '#0F0'});
+        // @ts-ignore
         const nearest = turf.nearestPoint(targetPoint, mapGrid.features);
         this.currentData = nearest.properties;
       });
