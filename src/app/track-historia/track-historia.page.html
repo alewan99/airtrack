@@ -5,32 +5,35 @@
     </ion-title>
   </ion-toolbar>
 </ion-header>
-<ion-content [fullscreen]="true" id="main-content">
-  <div style="width: 100%;height: 100%;background-color: #8c8c8c;position: relative;" #mapView>
-    <div style="position: absolute;right: 5px;top: 5px;z-index: 999">
-      <ion-button size="small" color="dark"  expand="full" href="/home">实时</ion-button>
-      <ion-button size="small" color="dark"  expand="full">污染物</ion-button>
-      <ion-button size="small" color="dark"  expand="full" (click)="showCalendar()" >日历</ion-button>
-      <ion-button size="small" color="dark"  expand="full">底图</ion-button>
-      <ion-button size="small" color="dark"  expand="full">图例</ion-button>
-    </div>
-    <ng-template [ngIf]="!!currentData">
-    <div style="position: absolute;left: 0;bottom: 0;z-index: 999;background-color: #2a2a2a;border-radius: 5px;padding: 5px;width: 200px;color: white;">
-        <div>time:{{currentData.time | date:'HH:mm:ss'}}</div>
-        <div>co:{{currentData.co}}</div>
-        <div>o3:{{currentData.o3}}</div>
-        <div>pm1:{{currentData.pm1}}</div>
-        <div>pm2.5:{{currentData.pm2_5}}</div>
-        <div>pm10:{{currentData.pm10}}</div>
-        <div>no2:{{currentData.no2}}</div>
-        <div>so2:{{currentData.so2}}</div>
-        <div>voc:{{currentData.voc}}</div>
-        <div>
-            <ion-button type="small" color="danger" [disabled]="mPlayStatus==1" (click)="searchRoundPOI(currentData)">周边</ion-button>
+<ion-content [fullscreen]="true">
+    <div style="width: 100%;height: 100%;background-color: #8c8c8c;position: relative;" #mapView>
+        <div style="position: absolute;right: 5px;top: 5px;z-index: 999">
+            <ion-button size="small" color="dark"  expand="full" href="/home">实时</ion-button>
+            <ion-button size="small" color="dark"  expand="full">污染物</ion-button>
+            <ion-button size="small" color="dark"  expand="full" (click)="showCalendar()" >日历</ion-button>
+            <ion-button size="small" color="dark"  expand="full">底图</ion-button>
+            <ion-button size="small" color="dark"  expand="full">图例</ion-button>
         </div>
+        <ng-template [ngIf]="!!currentData">
+            <div style="position: absolute;left: 0;bottom: 0;z-index: 999;background-color: #2a2a2a;border-radius: 5px;padding: 5px;width: 200px;color: white;">
+                <div>time:{{currentData.time | date:'HH:mm:ss'}}</div>
+                <div>co:{{currentData.co}}</div>
+                <div>o3:{{currentData.o3}}</div>
+                <div>pm1:{{currentData.pm1}}</div>
+                <div>pm2.5:{{currentData.pm2_5}}</div>
+                <div>pm10:{{currentData.pm10}}</div>
+                <div>no2:{{currentData.no2}}</div>
+                <div>so2:{{currentData.so2}}</div>
+                <div>voc:{{currentData.voc}}</div>
+                <div>
+                    <ion-button type="small" color="danger" [disabled]="mPlayStatus==1" (click)="searchRoundPOI(currentData)">周边</ion-button>
+                </div>
+            </div>
+        </ng-template>
     </div>
-    </ng-template>
-  </div>
+<!--    style="width: 100%;height: 100%;background-color: #8c8c8c;position: relative;"-->
+
+
 </ion-content>
 <ion-footer>
   <div style="padding: 5px;">
@@ -44,8 +47,7 @@
     <ion-button (click)="resumeAnimation()" *ngIf="mPlayStatus===2">播放</ion-button>
     <ion-button (click)="stopAnimation()" [color]="mPlayStatus>0? 'danger':'dark'">停止</ion-button>
     <ion-button (click)="showOptions=showOptions&&showOptions===true?false:true">选项</ion-button>
-     <ion-button *ngIf="!!currentMapGrid">高值点<ion-badge color="danger">{{currentMapGrid.hotPoints.length}}</ion-badge></ion-button>
+     <ion-button *ngIf="!!currentMapGrid" (click)="showHotPoints()" >突高点<ion-badge color="danger">{{currentMapGrid.hotPoints.length}}</ion-badge></ion-button>
     <ion-range min="0"  [(ngModel)]="currentCarLocation" (ionChange)="changeTrackPath($event)" [max]="trackPathLength"></ion-range>
-
   </div>
 </ion-footer>

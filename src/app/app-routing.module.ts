@@ -22,7 +22,11 @@ const routes: Routes = [
   {
     path: 'device-list',
     loadChildren: () => import('./device-list/device-list.module').then( m => m.DeviceListPageModule)
+  },  {
+    path: 'hot-points',
+    loadChildren: () => import('./hot-points/hot-points.module').then( m => m.HotPointsPageModule)
   }
+
 
 ];
 

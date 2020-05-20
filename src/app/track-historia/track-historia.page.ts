@@ -5,6 +5,7 @@ import {GeoUtil} from '../../utils/GeoUtil';
 import {MapGridUtil} from '../../utils/MapGridUtil';
 import {TrackData} from '../../model/TrackData';
 import {LoadingController, ModalController} from '@ionic/angular';
+import {HotPointsPage} from '../hot-points/hot-points.page';
 declare var AMap;
 @Component({
   selector: 'app-track-historia',
@@ -15,9 +16,6 @@ export class TrackHistoriaPage implements OnInit, AfterViewInit {
 
   @ViewChild('mapView') mapViewEl: ElementRef;
   map: any;
-
-  csvUtil = new CsvUtil();
-  geoUtil = new GeoUtil();
   showOptions = false;
   taskGrids = new Map();
   mTaskGridsVisible = true;
@@ -26,6 +24,8 @@ export class TrackHistoriaPage implements OnInit, AfterViewInit {
   currentCarLocation = 0;
   currentData: TrackData;
   mPlayStatus = 0;
+  csvUtil = new CsvUtil();
+  geoUtil = new GeoUtil();
 
   constructor(public taskService: TaskService, public loadingCtrl: LoadingController, public modalCtrl: ModalController) {
 
@@ -98,6 +98,16 @@ export class TrackHistoriaPage implements OnInit, AfterViewInit {
   }
 
 
+
+
+  async showHotPoints() {
+    const modal = await this.modalCtrl.create({
+      component: HotPointsPage,
+      componentProps: { hotPoints: this.currentMapGrid.hotPoints }
+    });
+    return await modal.present();
+  }
+
   startAnimation() {
     this.currentMapGrid.marker.moveAlong(this.currentMapGrid.trackPath, 200);
     this.mPlayStatus = 1;
@@ -117,12 +127,33 @@ export class TrackHistoriaPage implements OnInit, AfterViewInit {
     console.log('onPathVisbileChange');
   }
 
+  searchRoundPOI(data){
+
+  }
+
+  showCalendar(){
+
+  }
+
   ngAfterViewInit(): void {
     this.map = new AMap.Map(this.mapViewEl.nativeElement, {
       resizeEnable: true, // 是否监控地图容器尺寸变化
       zoom: 11, // 初始化地图层级
       center: [116.397428, 39.90923] // 初始化地图中心点
     });
+    // this.map = new AMap.Map(this.mapViewEl.nativeElement, {
+    //   resizeEnable: true,
+    //   rotateEnable: true,
+    //   pitchEnable: true,
+    //   zoom: 17,
+    //   pitch: 80,
+    //   rotation: -15,
+    //   viewMode: '3D', // 开启3D视图,默认为关闭
+    //   buildingAnimation: true, // 楼块出现是否带动画
+    //   expandZoomRange: true,
+    //   zooms: [3, 20],
+    //   center: [116.333926, 39.997245]
+    // });
     this.currentTaskId = '05c9aa69-ace0-4153-8704-de9a0b641b78';
     this.taskService.loadTaskTrackCsvData(this.currentTaskId).subscribe(res => {
       const trackData = this.csvUtil.loadData(res);

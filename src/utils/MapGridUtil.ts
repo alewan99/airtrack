@@ -96,7 +96,7 @@ export  class MapGridUtil {
 
 
     /**
-     * 加载高值热点
+     * 获取突高报警点
      */
     loadHotPoints() {
         setTimeout(
