@@ -46,7 +46,7 @@ export class HotPointsPage implements OnInit {
         this.pageIndex === (this.pageCount - 1) ? this.mHotPoints.slice(this.pageIndex * this.pageSize) :
             this.mHotPoints.slice(this.pageIndex * this.pageSize, this.pageIndex * (this.pageSize + 1));
     // @ts-ignore
-    const locations = batchPoints.map(p => p.geometry.coordinates.map(c => c.toFixed(6) ).join(','));
+    const locations = batchPoints.map(p => p.geometry.coordinates.map(c => c.toFixed(6)).join(','));
     // restapi.amap.com/v3/geocode/regeo?key=您的key&location=116.481488,39.990464&poitype=商务写字楼&radius=1000&extensions=all&batch=true&roadlevel=0
     const url = `//restapi.amap.com/v3/geocode/regeo?key=e6b9cf56ff9d7ab84b52995cec6f621d&location=${locations.join('|')}&radius=1000&extensions=all&batch=true&roadlevel=0`;
     console.log('geocode url=>' + url);

@@ -1,37 +1,10 @@
 import {PollutionStdUtil} from './PollutionStdUtil';
 import {GeoUtil} from './GeoUtil';
-import {FeatureCollection} from 'geojson';
+import {Feature, FeatureCollection} from 'geojson';
 import {EventEmitter} from '@angular/core';
 // import * as turf from 'turf';
 declare var AMap;
 export  class MapGridUtil {
-
-    bbox;
-    center;
-    sortFeatures;
-    gridMap = new Map();
-    overlayPolygonGroup;
-    overlayTextGroup;
-    overlayPolylineGroup;
-    overlayAlarmGroup;
-    map;
-    pollution = 'pm10';
-    colorUtil = new PollutionStdUtil();
-    gridData;
-    dataPoints;
-    pageIndex = 0;
-    isBusy = false;
-    pageSize = 200;
-    pageCount = 0;
-    geoUtil = new GeoUtil();
-    features;
-    trackPath;
-    taskPolyline;
-    gridCellSize = 0.05;
-    marker;
-    startMarker;
-    endMaker;
-    hotPoints = [];
 
     constructor(map, bbox, pollution = 'pm10', cellSize = 0.05) {
         // console.log(bbox);
@@ -85,10 +58,81 @@ export  class MapGridUtil {
         });
     }
 
+    bbox;
+    center;
+    sortFeatures;
+    gridMap = new Map();
+    overlayPolygonGroup;
+    overlayTextGroup;
+    overlayPolylineGroup;
+    overlayAlarmGroup;
+    map;
+    pollution = 'pm10';
+    pollutionStdUtil = new PollutionStdUtil();
+    gridData;
+    dataPoints;
+    pageIndex = 0;
+    isBusy = false;
+    pageSize = 200;
+    pageCount = 0;
+    geoUtil = new GeoUtil();
+    features;
+    trackPath;
+    taskPolyline;
+    gridCellSize = 0.05;
+    marker;
+    startMarker;
+    endMaker;
+    hotPoints = [];
+
+    alaramSegments = [];
+
+    private static sortByTime(p1: Feature, p2: Feature) {
+        return p1.properties.time > p2.properties.time ? -1 : 1;
+    }
+
     getOverlayAlarmGroup() {
         return this.overlayAlarmGroup;
     }
 
+    generateAlarmSegments() {
+        const alarmFeatures = this.sortFeatures.filter(p =>
+            p.properties[this.pollution] >
+            this.pollutionStdUtil.alarmValues[this.pollution])
+            .sort(MapGridUtil.sortByTime);
+        debugger;
+        let hasNextInSegments = false;
+        let lastestSegment = 0;
+        for (let i = 1; i < alarmFeatures.length; i++) {
+            const pre = alarmFeatures[i - 1];
+            const next = alarmFeatures[i];
+            // const options = {units: 'miles'};
+            // const distance = turf.distance(pre, next, options);
+            const start = new Date(pre.properties.time).getTime();
+            const end = new Date(next.properties.time).getTime();
+            const timespan = Math.abs(end - start) / 1000 / 60;
+            // 如果1分钟之内有连续报警则识别为同一个报警线段
+            if (timespan < 1) {
+                hasNextInSegments = true;
+            } else {
+                const startIndex = lastestSegment;
+                const endIndex = this.sortFeatures.indexOf(pre);
+                const segment = this.sortFeatures.slice(startIndex, endIndex).map(p => p.geometry.coordinates);
+                const linestring1 = turf.lineString(segment, {name: 'line 1'});
+                const alarmPath = new AMap.Polyline({
+                    map: this.map,
+                    path: segment,            // 设置线覆盖物路径
+                    showDir: false,
+                    strokeColor: '#FF0000',   // 线颜色
+                    strokeWeight: 5,           // 线宽
+                    zIndex: 375,
+                    extData: segment
+                });
+                lastestSegment = this.sortFeatures.indexOf(next);
+                hasNextInSegments = false;
+            }
+        }
+    }
 
     // hotPoints = [];
     onCellClick = (e) => console.log(e);
@@ -103,7 +147,7 @@ export  class MapGridUtil {
             () => {
                 const features = this.sortFeatures.filter(p =>
                     parseFloat(p.properties[this.pollution].toString()) >
-                    this.colorUtil.hotValues[this.pollution]);
+                    this.pollutionStdUtil.alarmValues[this.pollution]);
                 const hotPoints = [];
                 const newFeatures = features.sort((p1, p2) => {
                     return p1.properties.time > p2.properties.time ? -1 : 1;
@@ -131,7 +175,7 @@ export  class MapGridUtil {
                     const timespan = Math.abs(end - start);
                     console.log('distince=>' + distance + ';timespan=>' + timespan + ';value=>'
                         + newFeatures[i].properties[this.pollution]
-                        + ';std value=>' + this.colorUtil.hotValues[this.pollution]);
+                        + ';std value=>' + this.pollutionStdUtil.alarmValues[this.pollution]);
 
                     const total = timespan / 1000;
                    // 最近一分钟不列入计算
@@ -188,7 +232,7 @@ export  class MapGridUtil {
         // @ts-ignore
         const gridIndex = parseInt(colIndex.toString(), 0) * this.gridData.rows + parseInt(rowIndex.toString(), 0);
         if (!this.gridMap.has(gridIndex) && gridIndex < this.gridData.cells) {
-            const color = this.colorUtil.getPollutionColor(this.pollution, dataPoint[this.pollution]);
+            const color = this.pollutionStdUtil.getPollutionColor(this.pollution, dataPoint[this.pollution]);
             const polygon2 = new AMap.Polygon({
                 fillColor: color,
                 fillOpacity: .75,
@@ -254,9 +298,7 @@ export  class MapGridUtil {
     public loadData(features: FeatureCollection) {
         // this.features = this.geoUtil.toFeatureCollection(dataPoints);
         this.features = features;
-        this.sortFeatures = this.features.features.sort((p1, p2) => {
-            return p1.properties.time > p2.properties.time ? -1 : 1;
-        });
+        this.sortFeatures = this.features.features.sort(MapGridUtil.sortByTime);
         this.gridData = this.generateGrid(this.bbox, this.gridCellSize);
         this.dataPoints = this.sortFeatures.map(p => p.properties);
         this.trackPath = this.sortFeatures.map(p => p.geometry.coordinates);
@@ -295,9 +337,10 @@ export  class MapGridUtil {
 
 
         this.renderDataPoints(this.dataPoints);
-        this.generateTrackPath();
+        // this.generateTrackPath();
         this.getOverlayTextGroup().hide();
         this.loadHotPoints();
+        this.generateAlarmSegments();
     }
 
 
@@ -330,7 +373,7 @@ export  class MapGridUtil {
                         path: [points[i - 1].geometry.coordinates, points[i].geometry.coordinates
                         ],            // 设置线覆盖物路径
                         showDir: false,
-                        strokeColor: this.colorUtil.getPollutionColor(this.pollution,
+                        strokeColor: this.pollutionStdUtil.getPollutionColor(this.pollution,
                             points[i].properties[this.pollution]),   // 线颜色
                         strokeWeight: 5,           // 线宽
                         zIndex: 375,

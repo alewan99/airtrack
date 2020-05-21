@@ -16,7 +16,7 @@ export class PollutionStdUtil {
 
     colorSize = 50;
 
-    hotValues = {
+    alarmValues = {
         so: 150,
         pm10: 400,
         pm2_5: 115,
