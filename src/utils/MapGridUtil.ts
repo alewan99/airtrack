@@ -100,9 +100,9 @@ export  class MapGridUtil {
             p.properties[this.pollution] >
             this.pollutionStdUtil.alarmValues[this.pollution])
             .sort(MapGridUtil.sortByTime);
-        debugger;
+
         let hasNextInSegments = false;
-        let lastestSegment = 0;
+        let startSegmentIndex = this.sortFeatures.indexOf(alarmFeatures[0]);
         for (let i = 1; i < alarmFeatures.length; i++) {
             const pre = alarmFeatures[i - 1];
             const next = alarmFeatures[i];
@@ -115,7 +115,7 @@ export  class MapGridUtil {
             if (timespan < 1) {
                 hasNextInSegments = true;
             } else {
-                const startIndex = lastestSegment;
+                const startIndex = startSegmentIndex;
                 const endIndex = this.sortFeatures.indexOf(pre);
                 const segment = this.sortFeatures.slice(startIndex, endIndex).map(p => p.geometry.coordinates);
                 const linestring1 = turf.lineString(segment, {name: 'line 1'});
@@ -123,12 +123,12 @@ export  class MapGridUtil {
                     map: this.map,
                     path: segment,            // 设置线覆盖物路径
                     showDir: false,
-                    strokeColor: '#FF0000',   // 线颜色
+                    strokeColor: '#ff7443',   // 线颜色
                     strokeWeight: 5,           // 线宽
                     zIndex: 375,
                     extData: segment
                 });
-                lastestSegment = this.sortFeatures.indexOf(next);
+                startSegmentIndex = this.sortFeatures.indexOf(next);
                 hasNextInSegments = false;
             }
         }
