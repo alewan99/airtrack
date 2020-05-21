@@ -88,7 +88,11 @@ export  class MapGridUtil {
     alaramSegments = [];
 
     private static sortByTime(p1: Feature, p2: Feature) {
-        return p1.properties.time > p2.properties.time ? -1 : 1;
+        return new Date(p1.properties.time).getTime() > new Date(p2.properties.time).getTime() ? 1 : -1;
+    }
+
+    static sortByValue(p1, p2, pollution) {
+        return p1.properties[pollution] > p2.properties[pollution] ? -1 : 1;
     }
 
     getOverlayAlarmGroup() {
@@ -103,6 +107,7 @@ export  class MapGridUtil {
 
         let hasNextInSegments = false;
         let startSegmentIndex = this.sortFeatures.indexOf(alarmFeatures[0]);
+        const alramSegments = [];
         for (let i = 1; i < alarmFeatures.length; i++) {
             const pre = alarmFeatures[i - 1];
             const next = alarmFeatures[i];
@@ -128,10 +133,12 @@ export  class MapGridUtil {
                     zIndex: 375,
                     extData: segment
                 });
+                alramSegments.push(alarmPath);
                 startSegmentIndex = this.sortFeatures.indexOf(next);
                 hasNextInSegments = false;
             }
         }
+        console.log('alram Segments size=>' + alramSegments.length);
     }
 
     // hotPoints = [];
@@ -173,10 +180,9 @@ export  class MapGridUtil {
                     const start = new Date(newFeatures[i].properties.time).getTime();
                     const end = new Date(newFeatures[i + 1].properties.time).getTime();
                     const timespan = Math.abs(end - start);
-                    console.log('distince=>' + distance + ';timespan=>' + timespan + ';value=>'
-                        + newFeatures[i].properties[this.pollution]
-                        + ';std value=>' + this.pollutionStdUtil.alarmValues[this.pollution]);
-
+                    // console.log('distince=>' + distance + ';timespan=>' + timespan + ';value=>'
+                    //     + newFeatures[i].properties[this.pollution]
+                    //     + ';std value=>' + this.pollutionStdUtil.alarmValues[this.pollution]);
                     const total = timespan / 1000;
                    // 最近一分钟不列入计算
                     if (distance > 0.03 && total > 60) {
@@ -211,7 +217,7 @@ export  class MapGridUtil {
 
         // const cellSide = 0.05;
         // @ts-ignore
-        const squareGrid = turf.squareGrid(bbox, cellSide, {units: 'miles'});
+        const squareGrid = turf.squareGrid(bbox, cellSide);
         const cell = squareGrid.features[0].geometry.coordinates;
         const dx = Math.abs(cell[0][0][0] - cell[0][2][0]);
         const dy = Math.abs(cell[0][0][1] - cell[0][1][1]);
@@ -220,6 +226,7 @@ export  class MapGridUtil {
         const cols = parseInt((Math.round(width / dx)).toString(), 0);
         const rows = Math.floor(squareGrid.features.length / cols);
         const data = {width, height, cols, rows, dx, dy, cells: cols * rows, extent: bbox, grid: squareGrid};
+        console.log(data);
         return data;
     }
 
@@ -298,14 +305,14 @@ export  class MapGridUtil {
     public loadData(features: FeatureCollection) {
         // this.features = this.geoUtil.toFeatureCollection(dataPoints);
         this.features = features;
+        this.bbox = turf.bbox(this.features);
         this.sortFeatures = this.features.features.sort(MapGridUtil.sortByTime);
         this.gridData = this.generateGrid(this.bbox, this.gridCellSize);
-        this.dataPoints = this.sortFeatures.map(p => p.properties);
+        this.dataPoints = this.sortFeatures.sort(MapGridUtil.sortByValue).map(p => p.properties);
         this.trackPath = this.sortFeatures.map(p => p.geometry.coordinates);
         const nPageCount = parseInt((this.dataPoints.length / this.pageSize).toString(), 0);
         this.pageCount = this.dataPoints.length % this.pageSize === 0 ? nPageCount : nPageCount + 1;
         this.pageIndex = 0;
-        this.bbox = turf.bbox(this.features);
         this.center = turf.center(this.features);
         this.map.setZoomAndCenter(12, this.center.geometry.coordinates);
         this.taskPolyline = new AMap.Polyline({
@@ -334,8 +341,6 @@ export  class MapGridUtil {
             icon: 'assets/icon/zhongdian.png',
             title: '终点'
         });
-
-
         this.renderDataPoints(this.dataPoints);
         // this.generateTrackPath();
         this.getOverlayTextGroup().hide();

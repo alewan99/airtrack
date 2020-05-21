@@ -1,0 +1,20 @@
+import {Feature} from 'geojson';
+
+export  class TrackLineCavasLayer {
+
+    canvas: HTMLCanvasElement;
+    context: CanvasRenderingContext2D;
+    map: AMap.Map;
+    trackPath: Array<Feature>;
+
+    constructor(map: AMap.Map, trackPath: Array<Feature>) {
+        this.canvas = document.createElement('canvas');
+        this.context = this.canvas.getContext('2d');
+        this.map = map;
+        this.trackPath = trackPath;
+
+        const features = turf.featureCollection(trackPath);
+        const bbox = turf.bbox(features);
+        // map.lngLatToContainer();
+    }
+}

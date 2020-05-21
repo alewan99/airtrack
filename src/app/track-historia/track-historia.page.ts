@@ -154,7 +154,7 @@ export class TrackHistoriaPage implements OnInit, AfterViewInit {
     //   zooms: [3, 20],
     //   center: [116.333926, 39.997245]
     // });
-    this.currentTaskId = '05c9aa69-ace0-4153-8704-de9a0b641b78';
+    this.currentTaskId = '03d0f032-3a07-4251-8043-96b6302581a0';
     this.taskService.loadTaskTrackCsvData(this.currentTaskId).subscribe(res => {
       const trackData = this.csvUtil.loadData(res);
       const features = this.geoUtil.toFeatureCollection(trackData);

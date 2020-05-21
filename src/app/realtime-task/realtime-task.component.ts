@@ -58,7 +58,11 @@ export class RealtimeTaskComponent implements OnInit {
   private trackRealtimeData() {
     this._realtimeTrackTimer = setInterval(() => {
       this.taskService.getRealtimeData(this.deviceId).subscribe(res => {
-        this.onRealtimeDataChange.emit(res);
+        const trackData: TrackData = res;
+        if (!!trackData.lng && !!trackData.lat && trackData.lng > 0 && trackData.lat > 0)
+        {
+          this.onRealtimeDataChange.emit(res);
+        }
       });
     }, 1000);
   }
@@ -71,7 +75,6 @@ export class RealtimeTaskComponent implements OnInit {
         if (res.deviceId != null) {
           this.task = res;
           if (this.task.running) {
-            debugger;
             this.taskService.loadTaskTrackData(this.task.taskId).subscribe(trackList => {
               this.trackList = trackList;
               if (this.onRealtimeTaskLoaded != null) {
