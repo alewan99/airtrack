@@ -6,9 +6,15 @@
 
 <ion-content>
     <ion-list>
-        <ion-item *ngFor="let point of hotPoints">
-          <div>time:{{point.properties.time | date:'HH:mm:ss'}}</div>
-          <div></div>
+        <ion-item ion-button *ngFor="let point of hotPoints">
+            <ion-text >
+                <p>时间:{{point.properties.time | date:'HH:mm:ss'}}</p>
+                <p>高点值:{{point.properties.pm10 }}</p>
+                <p>位置:[{{point.properties.lng}},{{point.properties.lat}}]</p>
+                <p *ngIf="!!point.properties.regeocode">
+                    地点:{{point.properties.regeocode.formatted_address}}
+                </p>
+            </ion-text>
         </ion-item>
     </ion-list>
 </ion-content>

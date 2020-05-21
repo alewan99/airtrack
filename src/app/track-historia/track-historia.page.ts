@@ -15,7 +15,7 @@ declare var AMap;
 export class TrackHistoriaPage implements OnInit, AfterViewInit {
 
   @ViewChild('mapView') mapViewEl: ElementRef;
-  map: any;
+  map: AMap.Map;
   showOptions = false;
   taskGrids = new Map();
   mTaskGridsVisible = true;
@@ -26,6 +26,7 @@ export class TrackHistoriaPage implements OnInit, AfterViewInit {
   mPlayStatus = 0;
   csvUtil = new CsvUtil();
   geoUtil = new GeoUtil();
+  showFooterActionBar = false;
 
   constructor(public taskService: TaskService, public loadingCtrl: LoadingController, public modalCtrl: ModalController) {
 
@@ -88,7 +89,8 @@ export class TrackHistoriaPage implements OnInit, AfterViewInit {
       this.currentMapGrid.marker.setPosition(pos);
       const path = this.currentMapGrid.trackPath.slice(this.currentCarLocation);
       this.currentMapGrid.marker.moveAlong(path, 200);
-      this.mPlayStatus = 1;
+      this.currentMapGrid.marker.pauseMove();
+      this.mPlayStatus = 2;
     }
   }
 
@@ -154,7 +156,7 @@ export class TrackHistoriaPage implements OnInit, AfterViewInit {
     //   zooms: [3, 20],
     //   center: [116.333926, 39.997245]
     // });
-    this.currentTaskId = '03d0f032-3a07-4251-8043-96b6302581a0';
+    this.currentTaskId = '14e24359-3a6a-42be-966a-2d5e29ead9f2';
     this.taskService.loadTaskTrackCsvData(this.currentTaskId).subscribe(res => {
       const trackData = this.csvUtil.loadData(res);
       const features = this.geoUtil.toFeatureCollection(trackData);
@@ -168,6 +170,14 @@ export class TrackHistoriaPage implements OnInit, AfterViewInit {
         const nearest = turf.nearestPoint(targetPoint, mapGrid.features);
         this.currentData = nearest.properties;
       });
+      setInterval(() => {
+
+        const mapBounds: AMap.Bounds = this.map.getBounds();
+        if (!!this.currentMapGrid && !mapBounds.contains(this.currentMapGrid.marker.getPosition()) && this.mPlayStatus === 1) {
+          this.map.setCenter(this.currentMapGrid.marker.getPosition());
+          // this.map.setZoomAndCenter(18, this.currentMapGrid.marker.getPosition());
+        }
+      }, 1000);
       this.taskGrids.set(this.currentTaskId, mapGrid);
     });
   }

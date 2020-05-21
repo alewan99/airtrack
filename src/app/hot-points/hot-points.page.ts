@@ -51,7 +51,13 @@ export class HotPointsPage implements OnInit {
     const url = `//restapi.amap.com/v3/geocode/regeo?key=e6b9cf56ff9d7ab84b52995cec6f621d&location=${locations.join('|')}&radius=1000&extensions=all&batch=true&roadlevel=0`;
     console.log('geocode url=>' + url);
     this.http.get(url).subscribe(res => {
+      const obj: any = res;
       console.log(res);
+      for (let i = 0; i < obj.regeocodes.length; i++)
+      {
+        batchPoints[i].properties.regeocode = obj.regeocodes[i];
+      }
+
       this.pageIndex++;
       if (this.pageIndex < this.pageCount) {
         setTimeout(this.loadAddresses, 300);
